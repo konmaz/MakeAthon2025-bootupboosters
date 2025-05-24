@@ -1,15 +1,16 @@
-from openai import OpenAI
+from openai import AzureOpenAI
 import os
 
 # Θέσε πρώτα τις απαραίτητες περιβαλλοντικές μεταβλητές
 os.environ["OPENAI_API_TYPE"] = "azure"
 os.environ["OPENAI_API_BASE"] = os.getenv("AZURE_OPENAI_ENDPOINT")  # πχ https://ey-makeathon.openai.azure.com/
 os.environ["OPENAI_API_VERSION"] = "2023-05-15"
-
 # Δημιουργία client ΜΕΤΑ τον ορισμό των μεταβλητών
-client = OpenAI(api_key=os.getenv("AZURE_OPENAI_KEY"))
+client = AzureOpenAI(api_key=os.getenv("AZURE_OPENAI_KEY"))
 
 def summarize_text(text):
+    print("Azure OpenAI API Base:", os.getenv("OPENAI_API_BASE"))
+    print("Azure OpenAI API Key:", os.getenv("AZURE_OPENAI_KEY"))
     prompt = (
         "Δώσε μια σύντομη περίληψη στα ελληνικά του παρακάτω περιεχομένου:\n\n"
         + text[:4000]
