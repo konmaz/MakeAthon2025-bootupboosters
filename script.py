@@ -52,23 +52,23 @@ with col1:
             for file in uploaded_files
         ]
         # clear quiz state
-        for key in ['current_question', 'score', 'answered', 'shuffled_answers', 'quiz_data']:
+        for key in ['current_question', 'score', 'answered', 'shuffled_answers', 'quiz_data', 'mindmap', 'summary', 'flashcard_data']:
             if key in st.session_state:
                 del st.session_state[key]
 
-        # # Run all tasks in parallel
-        # async def process_all():
-        #     return await asyncio.gather(
-        #         gemini.ai(processed_files, langauge),
-        #         gemini.ai_flash_cards(processed_files, langauge),
-        #         gemini.ai_quiz(processed_files, langauge),
-        st.session_state.mindmap = gemini.ai_mindmap(processed_files, langauge)
-        #     )
+        # Run all tasks in parallel
+        async def process_all():
+            return await asyncio.gather(
+                gemini.ai(processed_files, langauge),
+                gemini.ai_flash_cards(processed_files, langauge),
+                gemini.ai_quiz(processed_files, langauge),
+                gemini.ai_mindmap(processed_files, langauge)
+            )
 
         # Run the async functions
-        # summary, flashCards, st.session_state.quiz_data, st.session_state.mindmap = asyncio.run(process_all())
+        st.session_state.summary, st.session_state.flashcard_data, st.session_state.quiz_data, st.session_state.mindmap = asyncio.run(process_all())
 
-summary = None
+
 # # YouTube Input Section
 # st.header("2️⃣ Or Paste a YouTube Video Link")
 # youtube_url = st.text_input("YouTube video link (with subtitles)")
@@ -77,10 +77,10 @@ summary = None
 
 with col2:
     st.header("📝 Summary")
-    if summary is None:
+    if st.session_state.get("summary") is None:
         st.info("Summary will appear here after processing...")
     else:
-        st.write(summary)
+        st.write(st.session_state.get("summary"))
 
 #
 # if enable_chat:

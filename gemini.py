@@ -49,7 +49,7 @@ async def ai(files: list[File], lan: str) -> str:
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         config=GenerateContentConfig(
-            system_instruction=f"Create a summary of all the materials! You are an AI Teacher! Please all your responses should be in {lan} language!"),
+            system_instruction=f"Create a summary of all the materials! You are an AI Teacher! Please all your responses should be in {lan} language! Also don't say here is your summary show it directly!"),
         contents=files)
     print(response.text)
     return response.text
@@ -78,7 +78,7 @@ async def ai_quiz(files: list[File], lan: str) -> list[QuizQuestion]:
     print(response.text)
     return response.parsed
 
-def ai_mindmap(files: list[File], lan: str) -> str:
+async def ai_mindmap(files: list[File], lan: str) -> str:
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         config=GenerateContentConfig(
