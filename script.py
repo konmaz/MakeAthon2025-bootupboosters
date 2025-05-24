@@ -1,55 +1,52 @@
 import streamlit as st
 from pathlib import Path
+from processors.pdf_parser import extract_text_from_pdf
+from processors.summarizer import summarize_text
+from processors.quiz_generator import generate_quiz
 
-# Set app title and layout
 st.set_page_config(page_title="Smart Study Assistant", layout="wide")
 
-# Sidebar
 with st.sidebar:
     st.title("⚙️ Settings")
-    st.markdown("Customize your study assistant")
     enable_summary = st.checkbox("Generate Summary", value=True)
     enable_flashcards = st.checkbox("Generate Flashcards", value=True)
     enable_chat = st.checkbox("Enable Chatbot Q&A", value=True)
 
-# App Title
 st.title("📚 From Lecture to Learning")
-st.markdown("Transform lecture content into structured, interactive study material.")
-
-# Upload Section
 st.header("1️⃣ Upload Your Materials")
 uploaded_files = st.file_uploader(
-    "Upload lecture files (PDF, DOCX, PPTX)",
-    type=["pdf", "docx", "pptx"],
-    accept_multiple_files=True
+    "Upload lecture files (PDF)", type=["pdf"], accept_multiple_files=True
 )
 
-# YouTube Input Section
-st.header("2️⃣ Or Paste a YouTube Video Link")
-youtube_url = st.text_input("YouTube video link (with subtitles)")
+if st.button("📥 Process Content") and uploaded_files:
+    full_text = ""
+    for file in uploaded_files:
+        filepath = Path("makeathon_ai_assistant/data") / file.name
+        with open(filepath, "wb") as f:
+            f.write(file.getbuffer())
+        raw_text = extract_text_from_pdf(str(filepath))
+        full_text += raw_text + "\n"
 
-# Submit Button
-if st.button("📥 Process Content"):
-    st.success("Processing your content... (placeholder)")
-    # Placeholder for processing logic
+        if enable_summary:
+            summary = summarize_text(raw_text)
+            st.markdown("#### 📝 Περίληψη")
+            st.info(summary)
 
-# Results Section
-st.header("3️⃣ Generated Study Materials")
+        if enable_flashcards:
+            quiz = generate_quiz(raw_text)
+            st.markdown("#### ❓ Quiz")
+            st.code(quiz)
 
-if enable_summary:
-    st.subheader("📝 Summary")
-    st.info("Summary will appear here after processing...")
-
-if enable_flashcards:
-    st.subheader("🧠 Flashcards")
-    st.warning("Flashcards will be generated here...")
+    if enable_chat:
+        from processors.chatbot import create_qa_chain, ask_question
+        st.session_state.qa_chain = create_qa_chain(full_text)
 
 if enable_chat:
-    st.subheader("💬 Ask Your Assistant")
+    st.header("💬 Ask Your Assistant")
     user_query = st.text_input("Ask a question about the content...")
     if user_query:
-        st.write("Chatbot response goes here...")
-
-# Footer
-st.markdown("---")
-st.caption("Built with 💡 for the EY Makeathon 2025")
+        if "qa_chain" not in st.session_state:
+            st.warning("Please upload and process a document first.")
+        else:
+            answer = ask_question(st.session_state.qa_chain, user_query)
+            st.write(answer)
