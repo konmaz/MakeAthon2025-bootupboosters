@@ -1,7 +1,6 @@
-chromadb
-langchain
-sentence-transformers
-pdfplumber
-python-docx
-python-pptx
 streamlit
+openai
+PyMuPDF
+boto3
+langchain
+chromadb
