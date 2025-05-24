@@ -46,7 +46,7 @@ with col1:
         youtube_url = st.text_input("Enter YouTube video link")
 
     langauge = st.selectbox("The language of which the material will be generated", ("Greek", "English", "France", "Dutch", "Cantonese"))
-    if st.button("📥 Process Content"):
+    if st.button("📥 Process Content") and len(uploaded_files):
         processed_files: list[File] = [
             gemini.upload_files(io.BytesIO(file.read()))
             for file in uploaded_files
@@ -56,16 +56,17 @@ with col1:
             if key in st.session_state:
                 del st.session_state[key]
 
-        # Run all tasks in parallel
-        async def process_all():
-            return await asyncio.gather(
-                gemini.ai(processed_files, langauge),
-                gemini.ai_flash_cards(processed_files, langauge),
-                gemini.ai_quiz(processed_files, langauge)
-            )
+        # # Run all tasks in parallel
+        # async def process_all():
+        #     return await asyncio.gather(
+        #         gemini.ai(processed_files, langauge),
+        #         gemini.ai_flash_cards(processed_files, langauge),
+        #         gemini.ai_quiz(processed_files, langauge),
+        st.session_state.mindmap = gemini.ai_mindmap(processed_files, langauge)
+        #     )
 
         # Run the async functions
-        summary, flashCards, st.session_state.quiz_data = asyncio.run(process_all())
+        # summary, flashCards, st.session_state.quiz_data, st.session_state.mindmap = asyncio.run(process_all())
 
 summary = None
 # # YouTube Input Section

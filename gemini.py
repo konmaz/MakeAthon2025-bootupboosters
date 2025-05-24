@@ -7,17 +7,24 @@ from google import *
 from google.genai.types import File, GenerateContentConfig
 from pydantic import BaseModel
 
+
 class QuizQuestion(BaseModel):
     question: str
     correct_answer: str
     incorrect_answers: list[str]
+
 
 class FlashCard(BaseModel):
     prompt: str
     answer: str
 
 
+class MindMap(BaseModel):
+    markdown: str
+
+
 client = genai.Client(api_key="AIzaSyA6hW_h-moKxXythxGYDCXYfykn9vzRzNA")
+
 
 @lru_cache
 def upload_files(file: BytesIO) -> File:
@@ -39,8 +46,6 @@ promptSummary = "Create a summary of all the materials."
 
 
 async def ai(files: list[File], lan: str) -> str:
-
-
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         config=GenerateContentConfig(
@@ -61,28 +66,8 @@ async def ai_flash_cards(files: list[File], lan: str) -> list[FlashCard]:
     print(response.text)
     return response.parsed
 
+
 async def ai_quiz(files: list[File], lan: str) -> list[QuizQuestion]:
-    # create mock fake data just for debugging
-    # mock_data = [
-    #     QuizQuestion(
-    #         question="What is the capital of France?",
-    #         correct_answer="Paris",
-    #         incorrect_answers=["London", "Berlin", "Madrid"]
-    #     ),
-    #     QuizQuestion(
-    #         question="Who painted the Mona Lisa?",
-    #         correct_answer="Leonardo da Vinci",
-    #         incorrect_answers=["Michelangelo", "Van Gogh", "Picasso"]
-    #     ),
-    #     QuizQuestion(
-    #         question="What is 2+2?",
-    #         correct_answer="4",
-    #         incorrect_answers=["3", "5", "6"]
-    #     )
-    # ]
-    # return mock_data
-    
-    
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         config=GenerateContentConfig(
@@ -92,3 +77,27 @@ async def ai_quiz(files: list[File], lan: str) -> list[QuizQuestion]:
         contents=["Create 2 quiz questions!"] + files)
     print(response.text)
     return response.parsed
+
+def ai_mindmap(files: list[File], lan: str) -> str:
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        config=GenerateContentConfig(
+            response_schema=MindMap,
+            response_mime_type="application/json",
+            system_instruction="""
+            You are creating an in-depth MarkMap mindmap in {lan}
+            Organize key Threat Intelligence points. Guidelines (apply to {language}):
+                           1. Max 4 primary nodes (top themes).
+                           2. Max 4 secondary nodes per primary (context titles).
+                           3. Sub-nodes: concise, relevant for threat analysts.
+                           4. No icons/emojis. No trailing spaces. No parentheses/special chars in field names.
+                           5. Escape/avoid special chars, e.g., `mail.kz` not `mail[.]kz`.
+                           6. Enclose text with dashes if needed, not extra parentheses.
+                           7.Ensure full MarkMap syntax compliance. No spaces between lines. No ``` at start/end
+            """),
+        contents=files
+    )
+    print(response.text)
+    x = f"{response.parsed.markdown}"
+    print(x)
+    return response.parsed.markdown
