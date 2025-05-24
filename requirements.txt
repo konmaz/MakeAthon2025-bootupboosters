@@ -1,7 +1,2 @@
-chromadb
-langchain
-sentence-transformers
-pdfplumber
-python-docx
-python-pptx
 streamlit
+google-genai
