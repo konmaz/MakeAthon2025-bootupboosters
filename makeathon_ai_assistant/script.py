@@ -21,7 +21,7 @@ uploaded_files = st.file_uploader(
 if st.button("📥 Process Content") and uploaded_files:
     full_text = ""
     for file in uploaded_files:
-        filepath = Path("/data") / file.name
+        filepath = Path("data") / file.name
         
         # Δημιουργία φακέλου αν δεν υπάρχει
         filepath.parent.mkdir(parents=True, exist_ok=True)
