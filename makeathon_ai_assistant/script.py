@@ -21,7 +21,11 @@ uploaded_files = st.file_uploader(
 if st.button("📥 Process Content") and uploaded_files:
     full_text = ""
     for file in uploaded_files:
-        filepath = Path("makeathon_ai_assistant/data") / file.name
+        filepath = Path("/data") / file.name
+        
+        # Δημιουργία φακέλου αν δεν υπάρχει
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        
         with open(filepath, "wb") as f:
             f.write(file.getbuffer())
         raw_text = extract_text_from_pdf(str(filepath))
