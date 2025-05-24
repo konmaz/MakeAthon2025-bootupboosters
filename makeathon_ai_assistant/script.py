@@ -42,7 +42,8 @@ if st.button("📥 Process Content") and uploaded_files:
             st.code(quiz)
 
     if enable_chat:
-        from processors.chatbot import create_qa_chain, ask_question
+        from processors.chatbot import create_qa_chain
+        # Δημιουργούμε και αποθηκεύουμε το qa_chain μόνο μία φορά
         st.session_state.qa_chain = create_qa_chain(full_text)
 
 if enable_chat:
@@ -52,5 +53,6 @@ if enable_chat:
         if "qa_chain" not in st.session_state:
             st.warning("Please upload and process a document first.")
         else:
+            from processors.chatbot import ask_question
             answer = ask_question(st.session_state.qa_chain, user_query)
             st.write(answer)
