@@ -1,6 +1,7 @@
+import os
 from openai import OpenAI
 
-client = OpenAI()
+client = OpenAI(api_key=os.getenv("AZURE_OPENAI_KEY"))
 
 def generate_quiz(text):
     prompt = (

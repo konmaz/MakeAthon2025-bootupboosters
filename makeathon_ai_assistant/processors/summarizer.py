@@ -1,7 +1,7 @@
 from openai import OpenAI
 import os
 
-client = OpenAI()
+client = OpenAI(api_key=os.getenv("AZURE_OPENAI_KEY"))
 
 def summarize_text(text):
     prompt = (
