@@ -6,6 +6,11 @@ from google import *
 from google.genai.types import File, GenerateContentConfig
 from pydantic import BaseModel
 
+class QuizQuestion(BaseModel):
+    question: str
+    correct_answer: str
+    incorrect_answer: str
+    incorrect_answer: str
 
 class FlashCard(BaseModel):
     front: str
@@ -53,5 +58,16 @@ def ai_flash_cards(files: list[File], lan: str) -> list[FlashCard]:
             response_mime_type="application/json",
             system_instruction=f"Please all your responses should be in {lan} language!"),
         contents=["Create 20 flashcards!"] + files)
+    print(response.text)
+    return response.parsed
+
+def ai_quiz(files: list[File], lan: str) -> list[QuizQuestion]:
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        config=GenerateContentConfig(
+            response_schema=list[QuizQuestion],
+            response_mime_type="application/json",
+            system_instruction=f"Please all your responses should be in {lan} language!"),
+        contents=["Create 20 quiz questions!"] + files)
     print(response.text)
     return response.parsed
