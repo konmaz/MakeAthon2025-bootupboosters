@@ -1,3 +1,4 @@
+import asyncio
 import io
 
 import streamlit as st
@@ -9,80 +10,76 @@ import gemini
 st.set_page_config(page_title="Smart Study Assistant", layout="wide")
 
 # Sidebar
-with st.sidebar:
-    st.title("⚙️ Settings")
-    st.markdown("Customize your study assistant")
-    enable_summary = st.checkbox("Generate Summary", value=True)
-    enable_flashcards = st.checkbox("Generate Flashcards", value=True)
-    enable_chat = st.checkbox("Enable Chatbot Q&A", value=True)
 
-tab1, tab2 = st.tabs(["Bring your own data", "Download from e class"])
-
+enable_summary = True
+enable_flashcards = True
+enable_chat = True
 
 # App Title
 st.title("📚 From Lecture to Learning")
 st.markdown("Transform lecture content into structured, interactive study material.")
-langauge = st.selectbox("Language", ("Greek", "English", "France"))
+
 # Upload Section
 
-with tab1:
-    st.header("1️⃣ Upload Your Materials")
-    uploaded_files = st.file_uploader(
-        "Upload lecture files (PDF)",
-        type=["pdf"],
-        accept_multiple_files=True
-    )
-with tab2:
-    st.header("Download from e learning platform")
-    st.markdown("""
-    Supported websites:
-    - https://oyc.yale.edu/
-    - https://opencourses.uoa.gr/
-    """)
 
-    class_url = st.text_input("Enter e learning platform URL")
+col1, col2 = st.columns(2)
 
+with col1:
+    st.header("Materials")
+    tab_bring_data, tab_download, tab_youtube = st.tabs(["Bring your own data", "Download from e class", "YouTube", ])
 
-flashCards, summary, quiz = None, None, None
+    with tab_bring_data:
+        uploaded_files = st.file_uploader(
+            "Upload lecture files",
+            type=["pdf"],
+            accept_multiple_files=True
+        )
+    with tab_download:
+        st.markdown("""
+           Examples:
+           - https://oyc.yale.edu/astronomy/astr-160
+           - https://opencourses.uoa.gr/
+           """)
+        class_url = st.text_input("Enter e learning platform URL")
+
+    with tab_youtube:
+        youtube_url = st.text_input("Enter YouTube video link")
+
+    langauge = st.selectbox("The language of which the material will be generated", ("Greek", "English", "France", "Dutch", "Cantonese"))
+    if st.button("📥 Process Content"):
+        processed_files: list[File] = [
+            gemini.upload_files(io.BytesIO(file.read()))
+            for file in uploaded_files
+        ]
+        # clear quiz state
+        for key in ['current_question', 'score', 'answered', 'shuffled_answers', 'quiz_data']:
+            if key in st.session_state:
+                del st.session_state[key]
+
+        # Run all tasks in parallel
+        async def process_all():
+            return await asyncio.gather(
+                gemini.ai(processed_files, langauge),
+                gemini.ai_flash_cards(processed_files, langauge),
+                gemini.ai_quiz(processed_files, langauge)
+            )
+
+        # Run the async functions
+        summary, flashCards, st.session_state.quiz_data = asyncio.run(process_all())
+
+summary = None
 # # YouTube Input Section
 # st.header("2️⃣ Or Paste a YouTube Video Link")
 # youtube_url = st.text_input("YouTube video link (with subtitles)")
 
 # Submit Button
-if st.button("📥 Process Content"):
 
-    processed_files: list[File] = [
-        gemini.upload_files(io.BytesIO(file.read()))
-        for file in uploaded_files
-    ]
-
-    summary = gemini.ai(processed_files, langauge)
-    flashCards = gemini.ai_flash_cards(processed_files, langauge)
-    quiz = gemini.ai_quiz(processed_files, langauge)
-
-
-# Results Section
-st.header("3️⃣ Generated Study Materials")
-
-if enable_summary:
-    st.subheader("📝 Summary")
+with col2:
+    st.header("📝 Summary")
     if summary is None:
         st.info("Summary will appear here after processing...")
     else:
         st.write(summary)
-
-
-if enable_flashcards:
-    st.subheader("🧠 Flashcards")
-    if flashCards is None:
-        st.warning("Flashcards will be generated here...")
-    else:
-        st.write(flashCards)
-st.subheader("Quiz")
-if quiz is None:
-    st.warning("Quiz will be generated here...")
-else:
-    st.write(quiz)
 
 #
 # if enable_chat:

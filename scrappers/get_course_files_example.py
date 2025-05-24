@@ -1,7 +1,7 @@
 from scrappers.openclass import get_course_files
 
 # Example usage
-url = "https://opencourses.uoa.gr/modules/document/?course=THEOL2"
+url = "https://opencourses.uoa.gr/modules/document/?course=ENL5"
 files = get_course_files(url)
 
 # Do something with the files

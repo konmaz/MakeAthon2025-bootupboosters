@@ -1,6 +1,8 @@
 import streamlit as st
 import random
 
+
+
 st.set_page_config(page_title="4-Button Quiz", layout="wide")
 st.title("🧠 4-Button Quiz")
 
@@ -21,7 +23,13 @@ else:
 
     if index >= total:
         st.success(f"🎉 Quiz complete! Final Score: {st.session_state.score}/{total}")
-        if st.button("Restart Quiz"):
+
+        a, b = st.columns(2)
+
+        st.metric("Correct questions", st.session_state.score, st.session_state.score - total)
+        st.metric("Total questions", total, )
+
+        if st.button("Reset Quiz"):
             st.session_state.current_question = 0
             st.session_state.score = 0
             st.session_state.answered = False
@@ -29,6 +37,7 @@ else:
             st.rerun()
     else:
         q = quiz[index]  # This is a QuizQuestion object
+        st.progress((st.session_state.current_question + 1) / len(quiz))
         st.subheader(f"Question {index + 1} of {total}")
         st.markdown(f"**{q.question}**")
 
@@ -37,13 +46,13 @@ else:
             random.shuffle(answers)
             st.session_state.shuffled_answers = answers
 
-        st.markdown("""
-            <style>
-            [data-testid="stMarkdownContainer"] {
-                font-size: 24px;
-            }
-            </style>
-        """, unsafe_allow_html=True)
+        # st.markdown("""
+        #     <style>
+        #     [data-testid="stMarkdownContainer"] {
+        #         font-size: 2px;
+        #     }
+        #     </style>
+        # """, unsafe_allow_html=True)
         message = None
         cols = st.columns(2)
         for i, answer in enumerate(st.session_state.shuffled_answers):
@@ -61,7 +70,7 @@ else:
             if message:
                 st.success("✅ Correct!")
             elif not message:
-                st.error(f"❌ Wrong! Correct answer: {q.correct_answer}")
+                st.error(f"❌ Wrong! Correct answer: **{q.correct_answer}**")
 
         if st.session_state.answered:
             if st.button("Next"):

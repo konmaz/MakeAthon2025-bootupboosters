@@ -43,7 +43,7 @@ def get_course_files(url):
             for link in row.find_all('a', href=True):
                 href = link['href']
                 full_url = urljoin(base_url, href)
-                if 'download' in href and f'course={course_param}' in href:
+                if 'download' in href and f'course={course_param}' in href and (href.endswith('.pdf') or href.endswith(".PDF")):
                     files.add(full_url)
                 elif 'openDir' in href and f'course={course_param}' in href:
                     folders.add(full_url)
@@ -67,7 +67,7 @@ def get_course_files(url):
             
             for new_folder in folders:
                 all_files.update(explore_folder(new_folder, visited))
-        
+
         return all_files
 
     return explore_folder(url, set())
