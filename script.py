@@ -1,94 +1,87 @@
-import asyncio
-import io
-
 import streamlit as st
+import io
+from threading import Thread
+import time
+
 from google.genai.types import File
-
 import gemini
+from streamlit.runtime.scriptrunner import add_script_run_ctx, get_script_run_ctx
 
-# Set app title and layout
+# Page config
 st.set_page_config(page_title="Smart Study Assistant", layout="wide")
-
-# Sidebar
-
-enable_summary = True
-enable_flashcards = True
-enable_chat = True
-
-# App Title
 st.title("📚 From Lecture to Learning")
 st.markdown("Transform lecture content into structured, interactive study material.")
-
-# Upload Section
-
 
 col1, col2 = st.columns(2)
 
 with col1:
     st.header("Materials")
-    tab_bring_data, tab_download, tab_youtube = st.tabs(["Bring your own data", "Download from e class", "YouTube", ])
-
+    tab_bring_data, tab_download, tab_youtube = st.tabs(["Bring your own data", "Download from e class", "YouTube"])
     with tab_bring_data:
-        uploaded_files = st.file_uploader(
-            "Upload lecture files",
-            type=["pdf"],
-            accept_multiple_files=True
-        )
+        uploaded_files = st.file_uploader("Upload lecture files", type=["pdf"], accept_multiple_files=True)
     with tab_download:
-        st.markdown("""
-           Examples:
-           - https://oyc.yale.edu/astronomy/astr-160
-           - https://opencourses.uoa.gr/
-           """)
-        class_url = st.text_input("Enter e learning platform URL")
-
+        class_url = st.text_input("Enter e-learning platform URL")
     with tab_youtube:
         youtube_url = st.text_input("Enter YouTube video link")
 
-    langauge = st.selectbox("The language of which the material will be generated", ("Greek", "English", "France", "Dutch", "Cantonese"))
-    if st.button("📥 Process Content") and len(uploaded_files):
+    langauge = st.selectbox("Select material language", ("Greek", "English", "France", "Dutch", "Cantonese"))
+
+    # ---- BUTTON ACTION ----
+    if st.button("📥 Process Content") and uploaded_files:
+        # Upload PDFs
         processed_files: list[File] = [
             gemini.upload_files(io.BytesIO(file.read()))
             for file in uploaded_files
         ]
-        # clear quiz state
-        for key in ['current_question', 'score', 'answered', 'shuffled_answers', 'quiz_data', 'mindmap', 'summary', 'flashcard_data']:
-            if key in st.session_state:
-                del st.session_state[key]
 
-        # Run all tasks in parallel
-        async def process_all():
-            return await asyncio.gather(
-                gemini.ai(processed_files, langauge),
-                gemini.ai_flash_cards(processed_files, langauge),
-                gemini.ai_quiz(processed_files, langauge),
-                gemini.ai_mindmap(processed_files, langauge)
-            )
+        # Clear previous state
+        for key in ['summary', 'flashcard_data', 'quiz_data', 'mindmap', 'current_question', 'score', 'answered', 'shuffled_answers']:
+            st.session_state.pop(key, None)
 
-        # Run the async functions
-        st.session_state.summary, st.session_state.flashcard_data, st.session_state.quiz_data, st.session_state.mindmap = asyncio.run(process_all())
+        # Containers to live-update
+        st.subheader("⏳ Generating Content...")
+        summary_box = st.empty()
+        flashcard_box = st.empty()
+        quiz_box = st.empty()
+        mindmap_box = st.empty()
 
+        # Define thread class
+        class TaskThread(Thread):
+            def __init__(self, target_func, state_key, container):
+                super().__init__()
+                self.target_func = target_func
+                self.state_key = state_key
+                self.container = container
+                add_script_run_ctx(self, get_script_run_ctx())
 
-# # YouTube Input Section
-# st.header("2️⃣ Or Paste a YouTube Video Link")
-# youtube_url = st.text_input("YouTube video link (with subtitles)")
+            def run(self):
+                try:
+                    result = self.target_func(processed_files, langauge)
+                    st.session_state[self.state_key] = result
+                    self.container.success(f"{self.state_key.capitalize()} ready ✅")
+                except Exception as e:
+                    self.container.error(f"Error in {self.state_key}: {e}")
 
-# Submit Button
+        # Launch threads
+        threads = [
+            TaskThread(gemini.ai, 'summary', summary_box),
+            TaskThread(gemini.ai_flash_cards, 'flashcard_data', flashcard_box),
+            TaskThread(gemini.ai_quiz, 'quiz_data', quiz_box),
+            TaskThread(gemini.ai_mindmap, 'mindmap', mindmap_box),
+        ]
+
+        for thread in threads:
+            thread.start()
+
+        for thread in threads:
+            thread.join()
 
 with col2:
     st.header("📝 Summary")
-    if st.session_state.get("summary") is None:
-        st.info("Summary will appear here after processing...")
+    if st.session_state.get("summary"):
+        st.write(st.session_state.summary)
     else:
-        st.write(st.session_state.get("summary"))
+        st.info("Summary will appear here after processing...")
 
-#
-# if enable_chat:
-#     st.subheader("💬 Ask Your Assistant")
-#     user_query = st.text_input("Ask a question about the content...")
-#     if user_query:
-#         st.write("Chatbot response goes here...")
-
-# Footer
 st.markdown("---")
 st.caption("Built with 💡 for the EY Makeathon 2025")

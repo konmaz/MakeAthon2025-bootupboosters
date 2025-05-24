@@ -45,40 +45,40 @@ promptQuiz = "Create 20 Q&A in the form of in please respond only the JSON :[{'q
 promptSummary = "Create a summary of all the materials."
 
 
-async def ai(files: list[File], lan: str) -> str:
+def ai(files: list[File], lan: str) -> str:
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         config=GenerateContentConfig(
-            system_instruction=f"Create a summary of all the materials! You are an AI Teacher! Please all your responses should be in {lan} language! Also don't say here is your summary show it directly!"),
+            system_instruction=f"Create a summary of all the materials! Please all your responses should be in {lan} language! Also don't say here is your summary show it directly!"),
         contents=files)
     print(response.text)
     return response.text
 
 
-async def ai_flash_cards(files: list[File], lan: str) -> list[FlashCard]:
+def ai_flash_cards(files: list[File], lan: str) -> list[FlashCard]:
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         config=GenerateContentConfig(
             response_schema=list[FlashCard],
             response_mime_type="application/json",
             system_instruction=f"Please all your responses should be in {lan} language!"),
-        contents=["Create 20 flashcards!"] + files)
+        contents=["Create 10 flashcards!"] + files)
     print(response.text)
     return response.parsed
 
 
-async def ai_quiz(files: list[File], lan: str) -> list[QuizQuestion]:
+def ai_quiz(files: list[File], lan: str) -> list[QuizQuestion]:
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         config=GenerateContentConfig(
             response_schema=list[QuizQuestion],
             response_mime_type="application/json",
             system_instruction=f"Please all your responses should be in {lan} language!"),
-        contents=["Create 2 quiz questions!"] + files)
+        contents=["Create 10 quiz questions!"] + files)
     print(response.text)
     return response.parsed
 
-async def ai_mindmap(files: list[File], lan: str) -> str:
+def ai_mindmap(files: list[File], lan: str) -> str:
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         config=GenerateContentConfig(
