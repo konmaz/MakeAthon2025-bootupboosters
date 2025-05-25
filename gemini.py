@@ -4,8 +4,10 @@ from functools import lru_cache
 from io import BytesIO
 from google import genai
 from google import *
-from google.genai.types import File, GenerateContentConfig
+from google.genai.types import File, GenerateContentConfig, FileData, Content, Part
 from pydantic import BaseModel
+
+from script import youtube_url
 
 
 class QuizQuestion(BaseModel):
@@ -45,48 +47,78 @@ promptQuiz = "Create 20 Q&A in the form of in please respond only the JSON :[{'q
 promptSummary = "Create a summary of all the materials."
 
 
-def ai(files: list[File], lan: str) -> str:
+
+def ai(files: list[File], youTubeURL: str, lan: str) -> str:
+    if youTubeURL is not None:
+        content = Content(
+            parts=[
+                Part(
+                    file_data=FileData(file_uri=youTubeURL))])
+    else:
+        content = files
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         config=GenerateContentConfig(
-            system_instruction=f"Create a summary of all the materials! Please all your responses should be in {lan} language! Also don't say here is your summary show it directly!"),
-        contents=files)
+            system_instruction=f"Create a summary of all the materials Min 6 paragraphs. Please all your responses should be in {lan} language! Also don't say here is your summary show it directly!"),
+        contents=content)
     print(response.text)
     return response.text
 
 
-def ai_flash_cards(files: list[File], lan: str) -> list[FlashCard]:
+def ai_flash_cards(files: list[File], youTubeURL: str, lan: str) -> list[FlashCard]:
+    if youTubeURL is not None:
+        content = Content(
+            parts=[
+                Part(
+                    file_data=FileData(file_uri=youTubeURL))])
+    else:
+        content = files
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         config=GenerateContentConfig(
             response_schema=list[FlashCard],
             response_mime_type="application/json",
-            system_instruction=f"Please all your responses should be in {lan} language!"),
-        contents=["Create 10 flashcards!"] + files)
+            system_instruction=f"Create 10 flashcards! Please all your responses should be in {lan} language!"),
+        contents=content)
     print(response.text)
     return response.parsed
 
 
-def ai_quiz(files: list[File], lan: str) -> list[QuizQuestion]:
+def ai_quiz(files: list[File], youTubeURL: str, lan: str) -> list[QuizQuestion]:
+    if youTubeURL is not None:
+        content = Content(
+            parts=[
+                Part(
+                    file_data=FileData(file_uri=youTubeURL))])
+    else:
+        content = files
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         config=GenerateContentConfig(
             response_schema=list[QuizQuestion],
             response_mime_type="application/json",
-            system_instruction=f"Please all your responses should be in {lan} language!"),
-        contents=["Create 10 quiz questions!"] + files)
+            system_instruction=f"Create 10 quiz questions. Please all your responses should be in {lan} language!"),
+        contents= content)
     print(response.text)
     return response.parsed
 
-def ai_mindmap(files: list[File], lan: str) -> str:
+
+def ai_mindmap(files: list[File], youTubeURL: str, lan: str) -> str:
+    if youTubeURL is not None:
+        content = Content(
+            parts=[
+                Part(
+                    file_data=FileData(file_uri=youTubeURL))])
+    else:
+        content = files
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         config=GenerateContentConfig(
             response_schema=MindMap,
             response_mime_type="application/json",
-            system_instruction="""
+            system_instruction=f"""
             You are creating an in-depth MarkMap mindmap in {lan}
-            Organize key Threat Intelligence points. Guidelines (apply to {language}):
+            Organize key Threat Intelligence points. Guidelines (apply to {lan}):
                            1. Max 4 primary nodes (top themes).
                            2. Max 4 secondary nodes per primary (context titles).
                            3. Sub-nodes: concise, relevant for threat analysts.
@@ -95,9 +127,23 @@ def ai_mindmap(files: list[File], lan: str) -> str:
                            6. Enclose text with dashes if needed, not extra parentheses.
                            7.Ensure full MarkMap syntax compliance. No spaces between lines. No ``` at start/end
             """),
-        contents=files
+        contents=content
     )
     print(response.text)
     x = f"{response.parsed.markdown}"
     print(x)
     return response.parsed.markdown
+
+
+def foo():
+    response = client.models.generate_content(
+        model='models/gemini-2.0-flash',
+        contents=Content(
+            parts=[
+                Part(
+                    file_data=FileData(file_uri='https://www.youtube.com/watch?v=9hE5-98ZeCg')
+                ),
+                Part(text='Please summarize the video in 3 sentences.')
+            ]
+        )
+    )

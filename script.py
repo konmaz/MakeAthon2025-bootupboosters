@@ -3,7 +3,9 @@ import io
 from threading import Thread
 import time
 
-from google.genai.types import File
+from google.genai.types import File, FileData
+from streamlit import button
+
 import gemini
 from streamlit.runtime.scriptrunner import add_script_run_ctx, get_script_run_ctx
 
@@ -13,6 +15,8 @@ st.title("📚 From Lecture to Learning")
 st.markdown("Transform lecture content into structured, interactive study material.")
 
 col1, col2 = st.columns(2)
+
+
 
 with col1:
     st.header("Materials")
@@ -26,6 +30,9 @@ with col1:
 
     langauge = st.selectbox("Select material language", ("Greek", "English", "France", "Dutch", "Cantonese"))
 
+    if button("h"):
+        print(youtube_url)
+        print(len(youtube_url))
     # ---- BUTTON ACTION ----
     if st.button("📥 Process Content") and uploaded_files:
         # Upload PDFs
@@ -56,7 +63,7 @@ with col1:
 
             def run(self):
                 try:
-                    result = self.target_func(processed_files, langauge)
+                    result = self.target_func(processed_files, (youtube_url if len(youtube_url) != 0 else None), langauge)
                     st.session_state[self.state_key] = result
                     self.container.success(f"{self.state_key.capitalize()} ready ✅")
                 except Exception as e:
