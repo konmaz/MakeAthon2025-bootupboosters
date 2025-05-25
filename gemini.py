@@ -26,7 +26,7 @@ class MindMap(BaseModel):
     markdown: str
 
 
-client = genai.Client(api_key="AIzaSyA6hW_h-moKxXythxGYDCXYfykn9vzRzNA")
+client = genai.Client(api_key=st.secrets["genai"]["api_key"])
 
 
 @st.cache_data
