@@ -38,7 +38,7 @@ with col1:
         ]
 
         # Clear previous state
-        for key in ['summary', 'flashcard_data', 'quiz_data', 'mindmap', 'current_question', 'score', 'answered', 'shuffled_answers']:
+        for key in ['summary', 'flashcard_data', 'quiz_data', 'mindmap', 'current_question', 'score', 'answered', 'shuffled_answers', 'slide_index', 'presentation']:
             st.session_state.pop(key, None)
 
         # Containers to live-update
@@ -47,6 +47,7 @@ with col1:
         flashcard_box = st.empty()
         quiz_box = st.empty()
         mindmap_box = st.empty()
+        presentation = st.empty()
 
         # Define thread class
         class TaskThread(Thread):
@@ -71,6 +72,7 @@ with col1:
             TaskThread(gemini.ai_flash_cards, 'flashcard_data', flashcard_box),
             TaskThread(gemini.ai_quiz, 'quiz_data', quiz_box),
             TaskThread(gemini.ai_mindmap, 'mindmap', mindmap_box),
+            TaskThread(gemini.ai_presentation, 'presentation', presentation)
         ]
 
         for thread in threads:

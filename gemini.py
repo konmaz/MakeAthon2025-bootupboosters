@@ -6,6 +6,9 @@ from google.genai.types import File, GenerateContentConfig, FileData, Content, P
 from pydantic import BaseModel
 import streamlit as st
 
+class Presentation(BaseModel):
+    headline: str
+    bullet_points:list[str]
 
 
 class QuizQuestion(BaseModel):
@@ -89,6 +92,17 @@ def ai_quiz(files: list[File], youTubeURL: str, lan: str) -> list[QuizQuestion]:
     print(response.text)
     return response.parsed
 
+def ai_presentation(files: list[File], youTubeURL: str, lan: str) -> list[Presentation]:
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        config=GenerateContentConfig(
+            response_schema=list[Presentation],
+            response_mime_type="application/json",
+            system_instruction=f"Create 5 slides summarizing the content of the course. Please have at least 5 bullets for each slide. Please all your responses should be in {lan} language!"),
+        contents=generate_content(files, youTubeURL))
+    print(response.text)
+    return response.parsed
+
 
 def ai_mindmap(files: list[File], youTubeURL: str, lan: str) -> str:
     response = client.models.generate_content(
@@ -113,3 +127,4 @@ def ai_mindmap(files: list[File], youTubeURL: str, lan: str) -> str:
     x = f"{response.parsed.markdown}"
     print(x)
     return response.parsed.markdown
+
