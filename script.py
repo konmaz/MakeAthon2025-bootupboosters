@@ -16,28 +16,24 @@ st.markdown("Transform lecture content into structured, interactive study materi
 
 col1, col2 = st.columns(2)
 
-
-
 with col1:
     st.header("Materials")
-    tab_bring_data, tab_download, tab_youtube = st.tabs(["Bring your own data", "Download from e class", "YouTube"])
+    tab_bring_data, tab_download, tab_youtube = st.tabs(["💾 Bring your own data", "Download from e class", "💾 YouTube"])
     with tab_bring_data:
-        uploaded_files = st.file_uploader("Upload lecture files", type=["pdf"], accept_multiple_files=True)
+        uploaded_files = st.file_uploader("Upload lecture files", type=["pdf", "png", "jpeg", "mp3", "mp4"], accept_multiple_files=True)
     with tab_download:
         class_url = st.text_input("Enter e-learning platform URL")
     with tab_youtube:
+        st.info("Example YouTube video link: https://www.youtube.com/watch?v=9hE5-98ZeCg")
         youtube_url = st.text_input("Enter YouTube video link")
 
-    langauge = st.selectbox("Select material language", ("Greek", "English", "France", "Dutch", "Cantonese"))
+    langauge = st.selectbox("What language would you like the content in?", ("Greek", "English", "France", "Dutch", "Cantonese"))
 
-    if button("h"):
-        print(youtube_url)
-        print(len(youtube_url))
     # ---- BUTTON ACTION ----
-    if st.button("📥 Process Content") and uploaded_files:
+    if st.button("📥 Process Content") and (uploaded_files or class_url or youtube_url):
         # Upload PDFs
         processed_files: list[File] = [
-            gemini.upload_files(io.BytesIO(file.read()))
+            gemini.upload_files(io.BytesIO(file.read()), file.type)
             for file in uploaded_files
         ]
 

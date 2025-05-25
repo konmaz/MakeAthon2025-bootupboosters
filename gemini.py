@@ -1,13 +1,11 @@
 import pathlib
-import types
-from functools import lru_cache
+
 from io import BytesIO
 from google import genai
-from google import *
-from google.genai.types import File, GenerateContentConfig, FileData, Content, Part
+from google.genai.types import File, GenerateContentConfig, FileData, Content, Part, UploadFileConfig
 from pydantic import BaseModel
+import streamlit as st
 
-from script import youtube_url
 
 
 class QuizQuestion(BaseModel):
@@ -28,11 +26,11 @@ class MindMap(BaseModel):
 client = genai.Client(api_key="AIzaSyA6hW_h-moKxXythxGYDCXYfykn9vzRzNA")
 
 
-@lru_cache
-def upload_files(file: BytesIO) -> File:
+@st.cache_data
+def upload_files(file: BytesIO, file_type: str) -> File:
     return client.files.upload(
         file=file,
-        config=dict(mime_type='application/pdf')
+        config=UploadFileConfig(mime_type=file_type)
     )
 
 
@@ -47,8 +45,7 @@ promptQuiz = "Create 20 Q&A in the form of in please respond only the JSON :[{'q
 promptSummary = "Create a summary of all the materials."
 
 
-
-def ai(files: list[File], youTubeURL: str, lan: str) -> str:
+def generate_content(files: list[File], youTubeURL: str) -> Content | list[File]:
     if youTubeURL is not None:
         content = Content(
             parts=[
@@ -56,61 +53,44 @@ def ai(files: list[File], youTubeURL: str, lan: str) -> str:
                     file_data=FileData(file_uri=youTubeURL))])
     else:
         content = files
+    return content
+
+
+def ai(files: list[File], youTubeURL: str, lan: str) -> str:
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         config=GenerateContentConfig(
-            system_instruction=f"Create a summary of all the materials Min 6 paragraphs. Please all your responses should be in {lan} language! Also don't say here is your summary show it directly!"),
-        contents=content)
+            system_instruction=f"Create a summary of all the materials Min 7 paragraphs. Please all your responses should be in {lan} language! Also don't say here is your summary show it directly!"),
+        contents=generate_content(files, youTubeURL))
     print(response.text)
     return response.text
 
 
 def ai_flash_cards(files: list[File], youTubeURL: str, lan: str) -> list[FlashCard]:
-    if youTubeURL is not None:
-        content = Content(
-            parts=[
-                Part(
-                    file_data=FileData(file_uri=youTubeURL))])
-    else:
-        content = files
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         config=GenerateContentConfig(
             response_schema=list[FlashCard],
             response_mime_type="application/json",
             system_instruction=f"Create 10 flashcards! Please all your responses should be in {lan} language!"),
-        contents=content)
+        contents=generate_content(files, youTubeURL))
     print(response.text)
     return response.parsed
 
 
 def ai_quiz(files: list[File], youTubeURL: str, lan: str) -> list[QuizQuestion]:
-    if youTubeURL is not None:
-        content = Content(
-            parts=[
-                Part(
-                    file_data=FileData(file_uri=youTubeURL))])
-    else:
-        content = files
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         config=GenerateContentConfig(
             response_schema=list[QuizQuestion],
             response_mime_type="application/json",
             system_instruction=f"Create 10 quiz questions. Please all your responses should be in {lan} language!"),
-        contents= content)
+        contents=generate_content(files, youTubeURL))
     print(response.text)
     return response.parsed
 
 
 def ai_mindmap(files: list[File], youTubeURL: str, lan: str) -> str:
-    if youTubeURL is not None:
-        content = Content(
-            parts=[
-                Part(
-                    file_data=FileData(file_uri=youTubeURL))])
-    else:
-        content = files
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         config=GenerateContentConfig(
@@ -127,23 +107,9 @@ def ai_mindmap(files: list[File], youTubeURL: str, lan: str) -> str:
                            6. Enclose text with dashes if needed, not extra parentheses.
                            7.Ensure full MarkMap syntax compliance. No spaces between lines. No ``` at start/end
             """),
-        contents=content
+        contents=generate_content(files, youTubeURL)
     )
     print(response.text)
     x = f"{response.parsed.markdown}"
     print(x)
     return response.parsed.markdown
-
-
-def foo():
-    response = client.models.generate_content(
-        model='models/gemini-2.0-flash',
-        contents=Content(
-            parts=[
-                Part(
-                    file_data=FileData(file_uri='https://www.youtube.com/watch?v=9hE5-98ZeCg')
-                ),
-                Part(text='Please summarize the video in 3 sentences.')
-            ]
-        )
-    )
