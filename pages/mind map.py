@@ -9,6 +9,6 @@ else:
     # Initialize card state if not exists
     print("here it is")
     print(st.session_state.mindmap)
-    markmap(st.session_state.mindmap, height=1080)
+    markmap(st.session_state.mindmap, height=700)
 
 
